@@ -1,0 +1,6 @@
+{
+  "name": "RPI CivilGPT",
+  "description": "An advanced academic and professional AI assistant for Civil Engineering students, teachers, diploma engineers, and professionals with interactive estimation tools, AutoCAD guides, and a mock viva board simulator.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
