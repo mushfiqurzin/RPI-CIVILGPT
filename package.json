@@ -35,8 +35,4 @@
     "vite": "^6.2.3"
   }
 }
-"homepage": "https://mushfiqurzin.github.io/RPI-CIVILGPT/",
-"scripts": {
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d dist"
-}
+
