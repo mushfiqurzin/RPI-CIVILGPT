@@ -248,6 +248,26 @@ export default function App() {
   const [cadSearch, setCadSearch] = useState("");
   const [cadCategoryFilter, setCadCategoryFilter] = useState<string>("All");
 
+  // Project & Office Application States for Tab 5
+  const [projectSubTab, setProjectSubTab] = useState<"bbs" | "word" | "supervisor">("bbs");
+  const [bbsDiameter, setBbsDiameter] = useState<number>(16);
+  const [bbsLength, setBbsLength] = useState<number>(12);
+  const [bbsQty, setBbsQty] = useState<number>(5);
+  const [bbsUnit, setBbsUnit] = useState<"m" | "ft">("m");
+  const [wordMarginLeft, setWordMarginLeft] = useState<number>(1.5);
+  const [wordMarginOthers, setWordMarginOthers] = useState<number>(1.0);
+  const [wordLineSpacing, setLineSpacing] = useState<string>("1.5");
+  const [wordFontSize, setWordFontSize] = useState<number>(12);
+  const [selectedProjectId, setSelectedProjectId] = useState<number>(0);
+  const [projectMilestones, setProjectMilestones] = useState([
+    { id: 1, text: "Literature Review & Topic Selection (লিটারেচার রিভিউ)", done: true },
+    { id: 2, text: "Materials Collection & Sieve Analysis (বালির এফএম বের করা)", done: false },
+    { id: 3, text: "Concrete Mix Design (কনক্রিট মিক্স ডিজাইন অনুপাত নির্ধারণ)", done: false },
+    { id: 4, text: "Specimen Casting & Curing in Water Tank (কিউরিং প্রসেস)", done: false },
+    { id: 5, text: "Compressive Strength Testing using UTM (ইউটিএম লোড টেস্ট)", done: false },
+    { id: 6, text: "Report Writing & Final Presentation (থিসিস পেপার রাইটিং)", done: false },
+  ]);
+
   // Interactive Mock Viva States
   const [vivaActive, setVivaActive] = useState(false);
   const [vivaIndex, setVivaIndex] = useState(0);
@@ -263,6 +283,7 @@ export default function App() {
   const [voiceLang, setVoiceLang] = useState<"bn-BD" | "en-US">("bn-BD");
   const [voiceSupportError, setVoiceSupportError] = useState("");
   const recognitionRef = useRef<any>(null);
+  const chatbotRecognitionRef = useRef<any>(null);
 
   // Voice Interaction Recording UI Animation Simulation (Microphone toggle)
   const [isRecording, setIsRecording] = useState(false);
@@ -308,7 +329,17 @@ export default function App() {
     }
   };
 
-  // Convert File to Base64 for Gemini multimodal input
+  // Switch to Chat tab and immediately send a query
+  const askAssistant = (query: string, modeOverride?: StudyMode) => {
+    setActiveTab("study_desk");
+    const targetMode = modeOverride || "General Mode";
+    setActiveMode(targetMode);
+    
+    // Pass targetMode directly to avoid stale closures in React scheduled updates
+    setTimeout(() => {
+      handleSendChat(query, targetMode);
+    }, 50);
+  };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -328,7 +359,8 @@ export default function App() {
   };
 
   // Trigger Gemini API Server-Side Call
-  const handleSendChat = async (textToSend?: string) => {
+  const handleSendChat = async (textToSend?: string, modeOverride?: StudyMode) => {
+    const currentMode = modeOverride || activeMode;
     const text = (textToSend || inputVal).trim();
     if (!text && !attachment) return;
 
@@ -342,7 +374,7 @@ export default function App() {
       role: "user",
       content: text || "একটি ড্রয়িং ইমেজ আপলোড করেছেন।",
       timestamp: new Date(),
-      mode: activeMode,
+      mode: currentMode,
       attachmentName: attachment ? attachment.name : undefined,
       attachmentData: attachment ? attachment.base64 : undefined
     };
@@ -368,7 +400,7 @@ export default function App() {
         },
         body: JSON.stringify({
           messages: apiMessages,
-          activeMode: activeMode,
+          activeMode: currentMode,
           attachment: attachedDataToSend
         })
       });
@@ -384,7 +416,7 @@ export default function App() {
         role: "model",
         content: data.reply || "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।",
         timestamp: new Date(),
-        mode: activeMode
+        mode: currentMode
       };
 
       setMessages(prev => [...prev, newBotMsg]);
@@ -397,7 +429,7 @@ export default function App() {
         role: "model",
         content: `⚠️ **নেটওয়ার্ক সংযোগ বা এপিআই কী বিভ্রান্তি!** \n\n${err.message || "Gemini API ক্লাউড সংযোগ ব্যর্থ হয়েছে।"}\n\n**কীভাবে সমাধান করবেন:** \n১. ডানদিকের AI Studio Settings-এ আপনার \`GEMINI_API_KEY\` যুক্ত আছে কিনা তা নিশ্চিত করুন।\n২. আপনি চাইলে অফলাইন মডিউলসমূহ যেমন ইটের দেয়ালের হিসাব, ​​রড ওজন নিরূপণ এবং ড্রয়িং ড্যাশবোর্ড সম্পূর্ণ অফলাইনেই ব্যবহার করতে পারেন।`,
         timestamp: new Date(),
-        mode: activeMode
+        mode: currentMode
       };
       setMessages(prev => [...prev, errorBotMsg]);
     } finally {
@@ -405,23 +437,90 @@ export default function App() {
     }
   };
 
-  // Mock Simulated Voice Recorder
+  // Real Voice Speach-To-Text Recognition for Chatbot
   const handleMicrophoneClick = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("আপনার ব্রাউজারে ভয়েস টাইপিং সাপোর্ট করে না। অনুগ্রহ করে গুগল ক্রোম (Google Chrome) ব্রাউজার ব্যবহার করুন বা পোর্টালের উপরে 'Open in New Tab' এ ক্লিক করে নতুন ট্যাবে খুলুন।");
+      return;
+    }
+
     if (isRecording) {
+      if (chatbotRecognitionRef.current) {
+        try {
+          chatbotRecognitionRef.current.stop();
+        } catch (e) {
+          console.warn("Stopping chatbot speech non-fatal error:", e);
+        }
+      }
       setIsRecording(false);
       setSpeechFeedback("");
-      // Append a speech simulation query
-      setInputVal("Singly reinforced beam-এর নিউট্রাল অক্ষ নির্ণয়ের সূত্র কী?");
-    } else {
-      setIsRecording(true);
-      setSpeechFeedback("আপনার কথা শোনা হচ্ছে... (কথা শেষ হলে আবার ট্যাপ করুন)");
-      setTimeout(() => {
-        if (isRecording) {
-          setIsRecording(false);
-          setSpeechFeedback("");
-          setInputVal("১ ব্যাগ সিমেন্টের নির্দিষ্ট আয়তন কত CFT?");
+      return;
+    }
+
+    setSpeechFeedback("মাইক্রোফোন সংযোগ করা হচ্ছে...");
+    try {
+      const rec = new SpeechRecognition();
+      // Set to false for extremely high reliability across devices, avoiding hangs in iframe environments
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = "bn-BD";
+
+      rec.onstart = () => {
+        setIsRecording(true);
+        setSpeechFeedback("🎙️ ভয়েস টাইপিং অন আছে... অনুগ্রহ করে বাংলা বা ইংরেজিতে প্রশ্নটি বলুন");
+      };
+
+      rec.onresult = (e: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+          if (e.results[i].isFinal) {
+            finalTranscript += e.results[i][0].transcript;
+          } else {
+            interimTranscript += e.results[i][0].transcript;
+          }
         }
-      }, 5000);
+        
+        if (finalTranscript) {
+          setInputVal(prev => {
+            const trimmedPrev = prev.trim();
+            return trimmedPrev ? trimmedPrev + " " + finalTranscript : finalTranscript;
+          });
+          setSpeechFeedback("🎙️ ভয়েস টাইপ হলো! আপনি চাইলে আরও বলতে পারেন...");
+        } else if (interimTranscript) {
+          setSpeechFeedback("🎤 শুনছি: " + interimTranscript);
+        }
+      };
+
+      rec.onerror = (e: any) => {
+        console.error("Chatbot Voice Recognition Error:", e);
+        if (e.error === "not-allowed") {
+          setSpeechFeedback("⚠️ মাইক্রোফোন ব্যবহারের অনুমতি নেই! ব্রাউজারের Lock 🔒 আইকন থেকে Microphone 'Allow' করুন অথবা নতুন ট্যাবে ওপেন করুন।");
+        } else if (e.error === "no-speech") {
+          setSpeechFeedback("⚠️ কোনো আওয়াজ শোনা যায়নি! দয়া করে উচ্চস্বরে স্পষ্ট করে বলুন।");
+        } else if (e.error === "network") {
+          setSpeechFeedback("⚠️ নেটওয়ার্ক ক্রুটি! ইন্টারনেট সংযোগ চেক করুন।");
+        } else {
+          setSpeechFeedback(`⚠️ ভয়েস রিকগনিশন ক্রুটি: ${e.error || "unknown"}`);
+        }
+      };
+
+      rec.onend = () => {
+        setIsRecording(false);
+        // Do not instantly wipe the feedback if there is an error warning, so the student can read it
+        setTimeout(() => {
+          setSpeechFeedback(prev => prev && prev.startsWith("🎙️") ? "" : prev);
+        }, 3000);
+      };
+
+      chatbotRecognitionRef.current = rec;
+      rec.start();
+    } catch (err: any) {
+      console.error(err);
+      setIsRecording(false);
+      setSpeechFeedback("⚠️ ভয়েস টাইপিং ইনিশিয়ালাইজ করতে ব্যর্থ হয়েছে।");
     }
   };
 
@@ -514,6 +613,11 @@ export default function App() {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
+        } catch (e) {}
+      }
+      if (chatbotRecognitionRef.current) {
+        try {
+          chatbotRecognitionRef.current.stop();
         } catch (e) {}
       }
     };
@@ -1491,93 +1595,574 @@ export default function App() {
 
           {/* TAB 5: MICROSOFT OFFICE TEMPLATES & PROJECT CHECKLISTS */}
           {activeTab === "office_projects" && (
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-250 p-6 flex flex-col h-full overflow-y-auto">
-              <div className="mb-5 border-b border-slate-200 pb-4">
-                <h2 className="text-xl font-extrabold text-slate-800">
-                  সিভিল ইঞ্জিনিয়ারিং কম্পিউটার অ্যাপ্লিকেশন এবং প্রজেক্ট গাইড
-                </h2>
-                <p className="text-xs text-slate-500 mt-1">
-                  সিভিল ডিপার্টমেন্টের প্রজেক্টের থিসিস ফরম্যাটিং এবং এস্টিমেশনের জন্য Microsoft Excel ও Word ও PowerPoint টেমপ্লেট গাইড।
-                </p>
+            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-250 p-5 md:p-6 flex flex-col h-full overflow-y-auto">
+              
+              {/* Top Title Section */}
+              <div className="mb-5 border-b border-slate-200 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                    🛠️ সিভিল আইসিটি ল্যাব ও প্রজেক্ট গাইডবুক (Office & BBS Pro)
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    রাজশাহী পলিটেকনিক ইনস্টিটিউট সিভিল ডিপার্টমেন্টের থিসিস পেপার ফরম্যাট, এস্টিমেশন হিসাব এবং প্রজেক্ট ট্র্যাকার ল্যাব।
+                  </p>
+                </div>
+                
+                {/* Switcher Button Rail */}
+                <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 self-start md:self-auto shrink-0">
+                  <button
+                    onClick={() => setProjectSubTab("bbs")}
+                    className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                      projectSubTab === "bbs" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    📊 BBS Excel Pro
+                  </button>
+                  <button
+                    onClick={() => setProjectSubTab("word")}
+                    className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                      projectSubTab === "word" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    📄 Word Thesis Format
+                  </button>
+                  <button
+                    onClick={() => setProjectSubTab("supervisor")}
+                    className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                      projectSubTab === "supervisor" ? "bg-white text-blue-600 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    🎓 Project Supervisor
+                  </button>
+                </div>
               </div>
 
-              {/* Grid content */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* ACTIVE SUB-TAB CONTAINER */}
+              <div className="flex-grow min-h-0">
                 
-                {/* MS Excel guide */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:border-slate-350 transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="p-2 bg-emerald-100 text-emerald-700 rounded-lg font-black text-sm">XLS</span>
-                      <h3 className="text-sm font-extrabold text-slate-800">Microsoft Excel (Bar Bending Sheet)</h3>
+                {/* SUB TAB 1: BBS EXCEL PRO CALCULATOR */}
+                {projectSubTab === "bbs" && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+                    {/* Input Controls Card */}
+                    <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-4">
+                      <div>
+                        <h3 className="text-sm font-extrabold text-slate-850 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                          রড ওজন ও বার বেন্ডিং শিডিউল ক্যালকুলেটর
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          ছাদের রড বা কলামের রডের সঠিক ওজন ও মোট সিভিল প্রাক্কলন খরচ বের করুন।
+                        </p>
+                      </div>
+
+                      {/* Rod diameter selector */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          রডের ব্যাস (Diameter, D):
+                        </label>
+                        <select
+                          value={bbsDiameter}
+                          onChange={(e) => setBbsDiameter(Number(e.target.value))}
+                          className="w-full text-xs bg-white border border-slate-250 p-2 rounded-lg text-slate-800 outline-none focus:border-blue-500"
+                        >
+                          {[8, 10, 12, 16, 20, 22, 25, 32].map(d => (
+                            <option key={d} value={d}>{d} মিলিমিটার (mm)</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Unit Selector */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          পরিমাপের ইউনিট (Length Unit):
+                        </label>
+                        <div className="flex gap-2 bg-slate-200/50 p-1 rounded-md">
+                          <button
+                            onClick={() => { setBbsUnit("m"); }}
+                            className={`flex-1 text-center py-1 text-xs font-bold rounded-md transition-colors ${
+                              bbsUnit === "m" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            মিটার (meters)
+                          </button>
+                          <button
+                            onClick={() => { setBbsUnit("ft"); }}
+                            className={`flex-1 text-center py-1 text-xs font-bold rounded-md transition-colors ${
+                              bbsUnit === "ft" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            ফিট (feet)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Length field */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          একক রডের দৈর্ঘ্য (Length, L):
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="রডের দৈর্ঘ্য লিখুন..."
+                          value={bbsLength}
+                          onChange={(e) => setBbsLength(Math.max(1, Number(e.target.value)))}
+                          className="w-full text-xs bg-white border border-slate-250 p-2 rounded-lg text-slate-800 outline-none focus:border-blue-500 font-mono"
+                        />
+                      </div>
+
+                      {/* Quantity field */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          রডের সংখ্যা (Total Quantity, Qty):
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="সংখ্যা লিখুন..."
+                          value={bbsQty}
+                          onChange={(e) => setBbsQty(Math.max(1, Number(e.target.value)))}
+                          className="w-full text-xs bg-white border border-slate-250 p-2 rounded-lg text-slate-800 outline-none focus:border-blue-500 font-mono"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const unitName = bbsUnit === "m" ? "মিটার" : "ফিট";
+                          const query = `আমি Microsoft Excel এ ${bbsDiameter} মিলিমিটার ব্যাসের ${bbsLength} ${unitName} দীর্ঘ সম্পন্ন ${bbsQty} টি রডের বার বেন্ডিং শিডিউল (BBS) লেআউট বানাতে চাই। এর জন্য এক্সেল ফর্মুলা, রডের মোট ওজন নির্ণয় এবং গ্রাফিকাল কলাম লেআউট পদ্ধতিটি বুজিয়ে দাও।`;
+                          askAssistant(query, "Project Mode");
+                        }}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm mt-1"
+                      >
+                        📊 বিস্তারিত লেআউট এআই-এর কাছে পাঠান
+                      </button>
                     </div>
-                    <p className="text-xs text-slate-655 leading-relaxed">
-                      ছাদের রডের বার বেন্ডিং শিডিউল (BBS) তৈরিতে প্রয়োজনীয় এক্সেল ফর্মুলা গাইড এবং কলাম বিন্যাস প্রণালী।
-                    </p>
-                    <ul className="text-xs text-slate-500 space-y-1.5 mt-4 font-mono leading-relaxed list-disc list-inside">
-                      <li>কোর সূত্র: <code className="bg-white px-0.5">= (D^2)/162.2 * Length</code></li>
-                      <li>সিমেন্ট খোয়া রড অটো-যোগফলের জন্য SUM সমতুল্য ফিল্টার সেট করুন</li>
-                      <li>ইউনিট রূপান্তর: ১ ফিট = ০.৩০৪৮ মিটার সমরূপ সূত্র</li>
-                    </ul>
-                  </div>
 
-                  <button
-                    onClick={() => setInputVal("Microsoft Excel ব্যবহার করে নিখুঁত Bar Bending Schedule (BBS) তৈরির সম্পূর্ণ এক্সেল ফর্মুলা ও লেআউট পদ্ধতি বুঝিয়ে দিন।")}
-                    className="w-full mt-5 py-2 hover:bg-slate-105 border border-slate-250 text-xs font-bold text-slate-650 bg-white hover:bg-slate-100 rounded-lg transition-colors text-center"
-                  >
-                    এক্সেল গাইডবুক প্রশ্ন করুন
-                  </button>
-                </div>
+                    {/* Output Report & Formulas Screen */}
+                    <div className="lg:col-span-7 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
+                      <div>
+                        <div className="border-b border-slate-100 pb-3 mb-4">
+                          <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            রিয়েল-টাইম ক্যালকুলেশন রিপোর্ট
+                          </span>
+                          <h4 className="text-sm font-extrabold text-slate-800 mt-1">
+                            {bbsDiameter}mm রিবার ক্যাটাগরি প্রাক্কলন
+                          </h4>
+                        </div>
 
-                {/* MS Word guidelines */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:border-slate-350 transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="p-2 bg-blue-100 text-blue-700 rounded-lg font-black text-sm">DOC</span>
-                      <h3 className="text-sm font-extrabold text-slate-800">Microsoft Word (Report Formatting)</h3>
+                        {/* Interactive Result Dashboard */}
+                        <div className="grid grid-cols-2 gap-4 mb-5">
+                          <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 text-center">
+                            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider block">রডের মোট ওজন (Weight)</span>
+                            <span className="text-2xl font-black text-slate-800 font-mono">
+                              {((bbsDiameter * bbsDiameter / (bbsUnit === "m" ? 162.2 : 532.8)) * bbsLength * bbsQty).toFixed(3)}
+                            </span>
+                            <span className="text-xs font-bold text-slate-500 ml-1">কেজি (Kg)</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 text-center">
+                            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider block">বাজারমূল্য (Est. Cost)</span>
+                            <span className="text-2xl font-black text-slate-800 font-mono">
+                              {(((bbsDiameter * bbsDiameter / (bbsUnit === "m" ? 162.2 : 532.8)) * bbsLength * bbsQty) * 105).toLocaleString('bn-BD', { maximumFractionDigits: 0 })}
+                            </span>
+                            <span className="text-xs font-bold text-slate-500 ml-1">টাকা (৳)</span>
+                          </div>
+                        </div>
+
+                        {/* Step By Step Mathematical Formula Display */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-xs text-slate-700 space-y-2.5">
+                          <div className="font-bold border-b border-slate-200 pb-1.5 text-slate-800">
+                            📐 প্রাক্কলন গাণিতিক ব্যাখ্যা (Unit Weight Formula):
+                          </div>
+                          <div>
+                            {bbsUnit === "m" ? (
+                              <>
+                                <span>১ মিটার রডের সূত্র: </span>
+                                <code className="bg-blue-100/60 px-1 py-0.5 rounded text-blue-700 font-bold">W = D² / 162.2</code>
+                              </>
+                            ) : (
+                              <>
+                                <span>১ ফিট রডের সূত্র: </span>
+                                <code className="bg-blue-100/60 px-1 py-0.5 rounded text-blue-700 font-bold">W = D² / 532.8</code>
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            <span>হিসাব ধাপসমূহ:</span>
+                            <ul className="list-decimal list-inside pl-1 mt-1 text-slate-600 space-y-1">
+                              <li>{bbsDiameter}² / {bbsUnit === "m" ? "162.2" : "532.8"} = {(bbsDiameter * bbsDiameter / (bbsUnit === "m" ? 162.2 : 532.8)).toFixed(4)} কেজি/(প্রতি {bbsUnit === "m" ? "মিটার" : "ফিট"})</li>
+                              <li>মোট দৈর্ঘ্য = {bbsLength} {bbsUnit === "m" ? "মিটার" : "ফিট"} × {bbsQty} টি = {bbsLength * bbsQty} {bbsUnit === "m" ? "মিটার" : "ফিট"}</li>
+                              <li>মোট ওজন = {(bbsDiameter * bbsDiameter / (bbsUnit === "m" ? 162.2 : 532.8)).toFixed(4)} × {bbsLength * bbsQty} = {((bbsDiameter * bbsDiameter / (bbsUnit === "m" ? 162.2 : 532.8)) * bbsLength * bbsQty).toFixed(3)} কেজি</li>
+                              <li>মোট খরচ (আনুমানিক ১০৫ টাকা/কেজি) = {(((bbsDiameter * bbsDiameter / (bbsUnit === "m" ? 162.2 : 532.8)) * bbsLength * bbsQty) * 105).toFixed(1)} ৳</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Excel Formula copy helper */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 mt-4 text-[11px] text-blue-800 leading-normal">
+                        <strong>📊 এক্সেল ফর্মুলা ব্যবহারের টিপস:</strong> আপনার এক্সেল শিটে রডের ডায়ামিটার কলাম <code>A2</code> এবং রডের দৈর্ঘ্য কলাম <code>B2</code> হলে সি৩ (C3) সেলে লিখুন: <code>=(A2^2)/162.2*B2</code>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-655 leading-relaxed">
-                      ডিপার্টমেন্টাল ইন্টার্নশিপ বা ফাইনাল প্রজেক্ট থিসিস পেপার তৈরির নিয়মতান্ত্রিক মার্জিন, সাইটেশন এবং হেডিং ফরম্যাট কোড।
-                    </p>
-                    <ul className="text-xs text-slate-500 space-y-1.5 mt-4 leading-relaxed font-mono list-disc list-inside">
-                      <li>স্ট্যান্ডার্ড পেপার সাইজ: Letter/A4</li>
-                      <li>মার্জিন: Top, Bottom, Right = 1.0\", Left = 1.5\" (বাইন্ডিং এর জন্য)</li>
-                      <li>ফন্ট সাইজ: Times New Roman (Heading 1 = 14pt, Body = 12pt Line Spacing 1.5)</li>
-                    </ul>
                   </div>
+                )}
 
-                  <button
-                    onClick={() => setInputVal("Microsoft Word-এ সিভিল ইঞ্জিনিয়ারিং প্রজেক্ট রিপোর্ট ও ডিপ্লোমা ইন্টার্নশিপ পেপার ফরম্যাটিং এর স্ট্যান্ডার্ড মার্জিন, হেডিং ও সাইটেশন প্রদানের নিয়ম বিস্তারিত বলুন।")}
-                    className="w-full mt-5 py-2 hover:bg-slate-105 border border-slate-250 text-xs font-bold text-slate-650 bg-white hover:bg-slate-100 rounded-lg transition-colors text-center"
-                  >
-                    ওয়ার্ড ফরম্যাটিং প্রশ্ন করুন
-                  </button>
-                </div>
+                {/* SUB TAB 2: MICROSOFT WORD THESIS LAYOUT SIMULATOR */}
+                {projectSubTab === "word" && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full font-sans">
+                    {/* Controls Column */}
+                    <div className="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-4">
+                      <div>
+                        <h3 className="text-sm font-extrabold text-slate-850 flex items-center gap-1.5">
+                          <span className="p-1 bg-blue-100 rounded text-blue-800 text-[10px]">DOC</span>
+                          থিসিস ফরম্যাটিং এবং পেপার লেআউট স্যান্ডবক্স
+                        </h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          ডিপ্লোমা সেমিস্টার প্রজেক্ট রিপোর্ট তৈরির স্ট্যান্ডার্ড নিয়মগুলো সরাসরি পরীক্ষা করে দেখুন।
+                        </p>
+                      </div>
 
-                {/* Civil project idea supervisor */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:border-slate-350 transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="p-2 bg-purple-100 text-purple-700 rounded-lg font-black text-sm">PRJ</span>
-                      <h3 className="text-sm font-extrabold text-slate-800">Civil Engineering Final Project Supervisor</h3>
+                      {/* Left Margin slider */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1 text-[11px] text-slate-600 font-bold">
+                          <span>বাম মার্জিন (Left Margin - Binding):</span>
+                          <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-xs">{wordMarginLeft} ইঞ্চি</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="2"
+                          step="0.1"
+                          value={wordMarginLeft}
+                          onChange={(e) => setWordMarginLeft(Number(e.target.value))}
+                          className="w-full accent-blue-600"
+                        />
+                        <span className="text-[9px] text-slate-400 block mt-0.5">*রিপোর্ট বাইন্ডিং স্পেসের জন্য বামে অতিরিক্ত মার্জিন প্রয়োজন হয়।</span>
+                      </div>
+
+                      {/* Other Margins slider */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1 text-[11px] text-slate-600 font-bold">
+                          <span>অন্যান্য মার্জিন (Top/Bottom/Right):</span>
+                          <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-xs">{wordMarginOthers} ইঞ্চি</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="1.5"
+                          step="0.1"
+                          value={wordMarginOthers}
+                          onChange={(e) => setWordMarginOthers(Number(e.target.value))}
+                          className="w-full accent-blue-600"
+                        />
+                      </div>
+
+                      {/* Line Spacing */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          লাইন স্পেসিং (Line Spacing):
+                        </label>
+                        <select
+                          value={wordLineSpacing}
+                          onChange={(e) => setLineSpacing(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-250 p-2 rounded-lg text-slate-800 outline-none focus:border-blue-500"
+                        >
+                          <option value="1.0">Single (১.০)</option>
+                          <option value="1.15">1.15 (১.১৫)</option>
+                          <option value="1.5">Double Standard (১.৫)</option>
+                          <option value="2.0">Double (২.০)</option>
+                        </select>
+                      </div>
+
+                      {/* Font Size */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                          হেডিং ও বডি টেক্সট ফন্ট সাইজ (Font Size):
+                        </label>
+                        <div className="flex gap-2">
+                          {[11, 12, 14].map(sz => (
+                            <button
+                              key={sz}
+                              onClick={() => setWordFontSize(sz)}
+                              className={`flex-1 py-1.5 font-mono text-xs rounded border transition-colors ${
+                                wordFontSize === sz ? "bg-blue-600 text-white font-bold border-blue-500" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                              }`}
+                            >
+                              {sz}pt
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const query = `আমি Microsoft Word-এ আমার ফাইনাল সেমিস্টার থিসিস প্রজেক্ট রাইটিং ফরম্যাট করতে চাই। মেইট সেটিংস হলো: Left Margin ${wordMarginLeft}\", Top/Bottom/Right ${wordMarginOthers}\", Spacing ${wordLineSpacing}, বডি টেক্সট ফন্ট সাইজ ${wordFontSize}pt। আমাকে স্ট্যান্ডার্ড মার্জিন, শিরোনাম, উপ-শিরোনাম (Heading, Subheading) কোড এবং রাজশাহী পলিটেকনিকের কভার পেইজ লেআউটের গাইডলাইন দিন।`;
+                          askAssistant(query, "Project Mode");
+                        }}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm"
+                      >
+                        📄 থিসিস মার্জিন গাইড এআই-এর কাছে পাঠান
+                      </button>
                     </div>
-                    <p className="text-xs text-slate-655 leading-relaxed">
-                      ডিপ্লোমা ইন সিভিল ইঞ্জিনিয়ারিং ছাত্রদের রাজশাহী পলিটেকনিকের চূড়ান্ত বর্ষের প্রজেক্টের জন্য সেরা পাঁচটি আইডিয়া সেট করা হয়েছে।
-                    </p>
-                    <ul className="text-xs text-slate-500 space-y-1.5 mt-4 leading-relaxed list-disc list-inside">
-                      <li>ফ্লাই আই অ্যাশ ইটের শক্তি ট্রায়াল পরীক্ষা</li>
-                      <li>রাজশাহী অঞ্চলের লোকাল বালির FM নির্ধারণ ও কংক্রিট ডিজাইন স্ট্রেন্থ</li>
-                      <li>অটোমেটিক রেইনওয়াটার হারভেস্টিং ডিজাইন স্কেচ</li>
-                    </ul>
-                  </div>
 
-                  <button
-                    onClick={() => setInputVal("ডিপ্লোমা ইন সিভিল ইঞ্জিনিয়ারিং ফাইনাল সেমিস্টার প্রজেক্টের জন্য কয়েকটি আধুনিক ও বাস্তবসম্মত আইডিয়া, প্রজেক্ট মেথডলজি ও প্রেজেন্টেশন গাইডলাইন প্রদান করুন।")}
-                    className="w-full mt-5 py-2 hover:bg-slate-105 border border-slate-250 text-xs font-bold text-slate-655 bg-white hover:bg-slate-100 rounded-lg transition-colors text-center"
-                  >
-                    প্রজেক্ট ডিরেক্টরি প্রশ্ন করুন
-                  </button>
-                </div>
+                    {/* Paper Layout Sandbox Screen */}
+                    <div className="lg:col-span-7 border border-slate-200 rounded-xl p-5 flex flex-col items-center bg-slate-100 justify-center">
+                      <div className="text-[10px] text-slate-450 uppercase font-bold mb-3 tracking-widest text-center">
+                        🖥️ লাইভ A4 থিসিস শিট পেপার প্রিভিউ (Simulated Sheet)
+                      </div>
+                      
+                      {/* Dynamic Paper Container Box */}
+                      <div className="w-full max-w-sm aspect-[1/1.4] bg-white border border-slate-300 shadow-lg rounded p-3 flex flex-col justify-between transition-all relative">
+                        
+                        {/* Dynamic Margin Guide Line Indicators */}
+                        <div 
+                          style={{
+                            paddingTop: `${wordMarginOthers * 24}px`,
+                            paddingBottom: `${wordMarginOthers * 24}px`,
+                            paddingLeft: `${wordMarginLeft * 24}px`,
+                            paddingRight: `${wordMarginOthers * 24}px`,
+                          }}
+                          className="flex-1 flex flex-col justify-start h-full"
+                        >
+                          {/* Simulated margins dashes overlay for educational rendering */}
+                          <div className="absolute inset-0 border border-slate-200 pointer-events-none border-dashed"
+                            style={{
+                              top: `${wordMarginOthers * 24}px`,
+                              bottom: `${wordMarginOthers * 24}px`,
+                              left: `${wordMarginLeft * 24}px`,
+                              right: `${wordMarginOthers * 24}px`,
+                            }}
+                          />
+
+                          <div className="border-b border-slate-350 pb-1 mb-2">
+                            <h4 className="font-extrabold text-slate-800 leading-normal" style={{ fontSize: `${wordFontSize + 2}px` }}>
+                              CHAPTER 1: INTRODUCTION
+                            </h4>
+                          </div>
+
+                          <div className="text-slate-600 font-serif leading-relaxed text-left flex-1"
+                            style={{ 
+                              fontSize: `${wordFontSize - 3}px`, 
+                              lineHeight: `${Number(wordLineSpacing)}` 
+                            }}
+                          >
+                            Civil engineering is a professional engineering discipline that deals with the design, construction, and maintenance of the physical and naturally built environment. In Bangladesh, diploma engineers from Rajshahi Polytechnic Institute are playing a vital role in national infrastructure.
+                          </div>
+
+                          <div className="text-right text-[10px] text-slate-400 mt-2 border-t pt-1 border-slate-150">
+                            Page 1
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info Badge */}
+                      <div className="text-[11px] text-slate-600 mt-3.5 text-center leading-normal max-w-md bg-white border border-slate-200 rounded-lg p-2.5">
+                        💡 <strong>মেজারমেন্ট টিপস:</strong> ডানে, উপরে এবং নিচে রয়েছে <strong>{wordMarginOthers}\"</strong> স্ট্যান্ডার্ড ফাঁকা জায়গা এবং বামে বাইন্ডিং হোল কভারের জন্য রয়েছে <strong>{wordMarginLeft}\"</strong> অতিরিক্ত ফাঁকা জায়গা।
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SUB TAB 3: POLYTECHNIC ACADEMIC PROJECT SUPERVISOR */}
+                {projectSubTab === "supervisor" && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+                    {/* Left side list of 5 premium project directories */}
+                    <div className="lg:col-span-5 flex flex-col gap-3 max-h-[450px] overflow-y-auto">
+                      <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block mb-1">
+                        📁 ৫টি রাজশাহী পলিটেকনিক থিসিস ক্যাটাগরি:
+                      </span>
+                      {[
+                        {
+                          id: 0,
+                          title: "फ्लाइ অ্যাশ ইটের কম্প্রেশন ট্রায়াল",
+                          sub: "Fly Ash Carbon Neutral Bricks Strength Test",
+                          icon: "🧱"
+                        },
+                        {
+                          id: 1,
+                          title: "পদ্মা নদীর বালি FM ট্রায়াল",
+                          sub: "Local Sand FM & Concrete Strengh Correlation",
+                          icon: "⏳"
+                        },
+                        {
+                          id: 2,
+                          title: "ক্যাম্পাস রেইন-ওয়াটার হার্ভেস্টিং",
+                          sub: "Campus Rainwater Filtering Chamber Spec",
+                          icon: "💧"
+                        },
+                        {
+                          id: 3,
+                          title: "গ্লাস ফাইবার কংক্রিট ট্রায়াল",
+                          sub: "Glass Fiber Reinforcement Flexural Test",
+                          icon: "📐"
+                        },
+                        {
+                          id: 4,
+                          title: "সেলফ-কমপ্যাক্টিং ফ্লো এনালাইসিস",
+                          sub: "Self-Compacting Concrete Flow Quality Test",
+                          icon: "🧪"
+                        }
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setSelectedProjectId(p.id)}
+                          className={`w-full text-left p-3 rounded-lg border transition-all flex items-center gap-3 ${
+                            selectedProjectId === p.id 
+                              ? "bg-purple-50 border-purple-300 text-purple-900 shadow-sm"
+                              : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          <span className="text-xl shrink-0">{p.icon}</span>
+                          <div className="truncate leading-tight">
+                            <h4 className="text-xs font-bold truncate">{p.title}</h4>
+                            <span className="text-[10px] text-slate-450 font-mono truncate block mt-0.5">{p.sub}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Right side Detail Panel with live completion percent Gantt progress bar */}
+                    <div className="lg:col-span-7 border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
+                      {(() => {
+                        const projectList = [
+                          {
+                            title: "Environmental Circular Bricks with Fly Ash Trials",
+                            titleBn: "ফ্লাই অ্যাশ ইটের শক্তি ট্রায়াল পরীক্ষা ও বাণিজ্যিক ভ্যালু যাচাইকরণ",
+                            abstract: "কোল পাওয়ার প্ল্যান্ট থেকে নির্গত বর্জ্য ফ্লাই অ্যাশ ব্যবহার করে পরিবেশ-বান্ধব ব্লক ও ইট কাস্টিং করে ল্যাবরেটরিতে এর কম্প্রেশন টেষ্ট পরিচালন করা এবং সাধারণ ৩-পকেট ইটের তুলনায় এর নির্ভরযোগ্যতা ও খরচ বের করা।",
+                            materials: "কোল পাওয়ার প্ল্যান্ট ফ্লাই অ্যাশ, সিমেন্ট, লোকাল বালি, সিলিকন মোল্ড, হাইড্রোলিক প্রেস",
+                            optimalFM: "বালি এফএম ১.৫ (মিডিয়াম)",
+                            queryPrompt: "ফ্লাই অ্যাশ ইটের শক্তি ট্রায়াল পরীক্ষা ডিজাইন, কাস্টিং মিক্স অনুপাত এবং ডিপ্লোমা সিভিল থিসিস ফরম্যাটিং পেপার বিস্তারিত লিখে দাও।"
+                          },
+                          {
+                            title: "Rajshahi Sand Fineness Modulus Specimen Studies",
+                            titleBn: "রাজশাহী অঞ্চলের পদ্মা নদীর বালির FM অনুযায়ী কংক্রিট ডিজাইন স্ট্রেন্থ",
+                            abstract: "ASTM স্ট্যান্ডার্ড অনুযায়ী সিভ সেট ব্যবহার করে পদ্মা বালি এবং মোটা সিলেটের বালির FM বের করে গাণিতিক সমন্বয় করা। পরবর্তীতে ভিন্ন ভিন্ন FM এর বালি দিয়ে কংক্রিট সিলিন্ডার প্রস্তুত করে ইউনিভার্সাল টেস্টিং মেশিনে (UTM) ক্রাশিং লোড টেষ্ট করা।",
+                            materials: "লোকাল পদ্মা স্যান্ড, মোটা সিলেট লাল বালি, কাস্টিং সিলিন্ডার, ASTM চালুনী সেট, ওভেন ড্রাই ফ্রেম",
+                            optimalFM: "লোকাল পদ্মা বালি এফএম ১.৪, সিলেট লাল বালি এফএম ২.৮",
+                            queryPrompt: "রাজশাহী অঞ্চলের পদ্মা নদীর বালির FM নির্ধারণ ও কংক্রিট সিলিন্ডার শক্তি পরীক্ষার সম্পূর্ণ ল্যাবরেটরি রিপোর্ট মেথডলজি প্রদান করুন।"
+                          },
+                          {
+                            title: "Smart Rainwater Harvesting & Filtration Chambers",
+                            titleBn: "পলিটেকনিক ক্যাম্পাসে রেইন-ওয়াটার হারভেস্টিং ও মাল্টি-লেয়ার ফিল্টার ডিজাইন",
+                            abstract: "পলিটেকনিক একাডেমিক ভবনের ক্যাচমেন্ট এরিয়া বা ছাদের ঢালের ক্ষেত্রফল ব্যবহার করে বর্ষাকালীন মোট বৃষ্টিপাত হিসাব করা। পরে পানি পরিষ্কারের উদ্দেশ্যে নুড়িপথ, কয়লা, বালির সমন্বয়ে একটি গ্রাভিটি মাল্টি-লেয়ার ফিল্টার চেম্বার ডিজাইন সিলেকশন করা।",
+                            materials: "পিভিসি ডাউনটেক পাইপ, অ্যাক্টিভেটেড চারকোল গ্রানুলাস, গ্রাভেল কোয়ার্টস পাথর, মিহি ও মোটা বালি ফিল্টার বেড",
+                            optimalFM: "মোটা নুড়ি বালি (FM ৩.২)",
+                            queryPrompt: "রাজশাহী পলিটেকনিক ক্যাম্পাস ক্যাম্পাসের জন্য রেইন ওয়াটার কালেকশন স্লিপ ও ফিল্টারিং চেম্বারের মেকানিজম লেআউট বুঝিয়ে দিন।"
+                          },
+                          {
+                            title: "Glass Fiber-Reinforced Concrete Structural Tensile Tests",
+                            titleBn: "কংক্রিট মরটারে গ্লাস ফাইবার মিশ্রণের ফলে নমনীয়তা ও ফাটল প্রতিরোধ ট্রায়াল",
+                            abstract: "আরসিসি প্লাস্টারিং কাদার সাথে ০.৫% এবং ১.০% অনুপাতে মডিফাইড গ্লাস ফাইবার এলিমেন্ট মিক্স করে এর নমনীয়তা (Flexural Strength) বৃদ্ধি এবং কংক্রিট যখন কিউরিং হয় তখন এর গায়ে হেয়ারলাইন ফাটল রোধের ল্যাব টেস্ট পরিচালনা করা।",
+                            materials: "মোমেন্ট-রেজিস্ট্যান্ট গ্লাস ফাইবার, কন্সট্রাকশন পোর্টল্যান্ড সিমেন্ট, রিবার ট্রায়াল ক্যাচ",
+                            optimalFM: "মিডিয়াম বালি (FM ১.৬)",
+                            queryPrompt: "গ্লাস ফাইবার মিশ্রিত কংক্রিট স্ল্যাবের টেনসিল ও ফ্লেক্সারাল নমনীয়তা পরীক্ষার প্রসেস ও ডাটা এনালাইসিস বিস্তারিত বুঝিয়ে লিখুন।"
+                          },
+                          {
+                            title: "Self-Compacting Concrete Flow Performance Tests",
+                            titleBn: "সেলফ-কমপ্যাক্টিং কংক্রিট (SCC) এর ফ্লো ও ওয়ার্কাবিলিটি সান্দ্রতা পরীক্ষা",
+                            abstract: "অধিক ঘন রডের জটিল স্ট্রাকচারে যেখানে ভাইব্রেটর ব্যবহার প্রায় অসম্ভব, সেখানে নিজে নিজেই ছড়িয়ে পড়তে পারে এমন সেলফ-কমপ্যাক্টিং কংক্রিট মিক্স তৈরি এবং Slump Flow ও L-Box টেস্টের সমন্বয়ে এর সান্দ্রতা পরিমাপ করা।",
+                            materials: "সুপারপ্লাস্টিসাইজার কেমিক্যাল এডমিক্সচার, কোয়ার্টস পাউডার, ফাইন ফ্লাই অ্যাশ, স্টোন চিপস্",
+                            optimalFM: "সিলেট ও পদ্মা স্যান্ড মিক্সচার (FM ২.৪)",
+                            queryPrompt: "সেলফ-কমপ্যাক্টিং কংক্রিট তৈরিতে এডমিক্সচারের নিয়মাবলী এবং Slump Flow ল্যাব টেস্টিং প্রোটোকল বিশদ তুলে ধরুন।"
+                          }
+                        ];
+
+                        const activeProj = projectList[selectedProjectId] || projectList[0];
+                        const countDone = projectMilestones.filter(m => m.done).length;
+                        const percentComplete = Math.round((countDone / projectMilestones.length) * 100);
+
+                        return (
+                          <>
+                            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+                              {/* Title Info */}
+                              <div className="border-b border-slate-100 pb-2">
+                                <span className="text-[9px] font-mono text-purple-600 bg-purple-150 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                                  {activeProj.title}
+                                </span>
+                                <h4 className="text-sm font-extrabold text-slate-800 mt-1 leading-normal">
+                                  {activeProj.titleBn}
+                                </h4>
+                              </div>
+
+                              {/* Live Progress Gantt Bar */}
+                              <div className="bg-slate-50 border border-slate-150 rounded-xl p-3">
+                                <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold mb-1.5">
+                                  <span>🚀 সেমিস্টার ফাইনাল প্রজেক্ট অগ্রগতি ট্র্যাকার:</span>
+                                  <span className="text-purple-650 tracking-wider font-mono bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">{percentComplete}% সম্পন্ন</span>
+                                </div>
+                                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mb-1">
+                                  <div 
+                                    className="h-full bg-purple-600 transition-all duration-300 rounded-full"
+                                    style={{ width: `${percentComplete}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Project description list details */}
+                              <div className="space-y-2 text-xs text-slate-650 leading-relaxed bg-slate-50 border border-slate-150 rounded-xl p-3">
+                                <div>
+                                  <strong className="text-slate-800 block text-[11px]">সংক্ষিপ্ত উদ্দেশ্য (Abstract):</strong>
+                                  <p className="text-[11px] text-slate-600 mt-0.5">{activeProj.abstract}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 mt-2">
+                                  <div>
+                                    <strong className="text-slate-800 block text-[10px]">প্রয়োজনীয় ল্যাব ম্যাটেরিয়ালস:</strong>
+                                    <span className="text-[10px] text-slate-500 font-mono leading-tight">{activeProj.materials}</span>
+                                  </div>
+                                  <div>
+                                    <strong className="text-slate-800 block text-[10px]">আদর্শ এফএম (FM Scope):</strong>
+                                    <span className="text-[10px] text-purple-650 font-bold">{activeProj.optimalFM}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Detailed Interactive Sieve Milestones */}
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-500 block mb-1.5 uppercase">
+                                  🎯 প্রজেক্ট মাইলস্টোন ও প্রোগ্রেস চেকলিস্ট (Tap to toggle):
+                                </span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {projectMilestones.map((milestone) => (
+                                    <label
+                                      key={milestone.id}
+                                      className={`flex items-center gap-2 p-2 rounded-lg border text-[10px] font-medium transition-all cursor-pointer ${
+                                        milestone.done 
+                                          ? "bg-emerald-50/50 border-emerald-250 text-emerald-800 font-semibold"
+                                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={milestone.done}
+                                        onChange={() => {
+                                          setProjectMilestones(prev => 
+                                            prev.map(m => m.id === milestone.id ? { ...m, done: !m.done } : m)
+                                          );
+                                        }}
+                                        className="rounded border-slate-300 text-purple-600 focus:ring-purple-500 h-3 w-3"
+                                      />
+                                      <span className="truncate">{milestone.text}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* CTA Ask supervisor button */}
+                            <button
+                              onClick={() => {
+                                const completedSteps = projectMilestones.filter(m => m.done).map(m => m.text).join(", ");
+                                const nextPending = projectMilestones.find(m => !m.done)?.text || "সবগুলো ধাপ";
+                                const query = `আমি সেমিস্টার ফাইনাল প্রজেক্ট হিসেবে "${activeProj.titleBn} (${activeProj.title})" নিয়ে কাজ করছি। ইতিমধ্যে আমি "${completedSteps || "কোনটিই নয়"}" সম্পন্ন করেছি। এখন আমার পরবর্তী পদক্ষেপ "${nextPending}" কিভাবে সমাধান করবো এবং রাজশাহী পলিটেকনিকের শিক্ষকদের রিকমেন্ডেশন অনুযায়ী ল্যাব টেস্ট ডাটার আদর্শ মান কিভাবে এস্টিমেট করবো তা বুঝিয়ে দিন।`;
+                                askAssistant(query, "Project Mode");
+                              }}
+                              className="w-full mt-4 py-2.5 bg-purple-650 hover:bg-purple-700 text-white font-bold rounded-lg text-xs transition-colors shadow-md shadow-purple-500/10 text-center"
+                            >
+                              💼 সিভিল প্রজেক্ট সুপরভাইজারকে জিজ্ঞেস করুন (এআই চ্যাট)
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>

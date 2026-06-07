@@ -26,7 +26,7 @@ export default function MarkdownAndMath({ content }: MarkdownAndMathProps) {
             return (
               <div 
                 key={index} 
-                className="overflow-x-auto overflow-y-hidden py-3 px-4 my-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-mono shadow-inner text-sm md:text-sm scrollbar-thin"
+                className="overflow-x-auto overflow-y-hidden py-1.5 px-3 my-1.5 bg-slate-50/80 border border-slate-150 rounded-lg text-slate-800 text-center text-sm scrollbar-none max-w-full"
                 dangerouslySetInnerHTML={{ __html: html }}
               />
             );
