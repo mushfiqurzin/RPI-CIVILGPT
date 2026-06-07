@@ -406,7 +406,14 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error("সার্ভার রেসপন্স করতে ব্যর্থ হয়েছে। দয়া করে আপনার GEMINI_API_KEY কনফিগারেশন চেক করুন।");
+        let serverErrorMsg = "সার্ভার রেসপন্স করতে ব্যর্থ হয়েছে।";
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            serverErrorMsg = errData.error;
+          }
+        } catch (_) {}
+        throw new Error(serverErrorMsg);
       }
 
       const data = await response.json();
@@ -427,7 +434,7 @@ export default function App() {
       const errorBotMsg: Message = {
         id: Math.random().toString(),
         role: "model",
-        content: `⚠️ **নেটওয়ার্ক সংযোগ বা এপিআই কী বিভ্রান্তি!** \n\n${err.message || "Gemini API ক্লাউড সংযোগ ব্যর্থ হয়েছে।"}\n\n**কীভাবে সমাধান করবেন:** \n১. ডানদিকের AI Studio Settings-এ আপনার \`GEMINI_API_KEY\` যুক্ত আছে কিনা তা নিশ্চিত করুন।\n২. আপনি চাইলে অফলাইন মডিউলসমূহ যেমন ইটের দেয়ালের হিসাব, ​​রড ওজন নিরূপণ এবং ড্রয়িং ড্যাশবোর্ড সম্পূর্ণ অফলাইনেই ব্যবহার করতে পারেন।`,
+        content: `⚠️ **নেটওয়ার্ক সংযোগ বা এপিআই কী বিভ্রান্তি—Groq API!** \n\n${err.message || "Groq API ক্লাউড সংযোগ ব্যর্থ হয়েছে।"}\n\n**কীভাবে সমাধান করবেন:** \n১. ডানদিকের AI Studio Settings (Secrets Panel)-এ আপনার \`GROQ_API_KEY\` যুক্ত আছে কিনা তা নিশ্চিত করুন।\n২. আপনি চাইলে অফলাইন মডিউলসমূহ যেমন ইটের দেয়ালের হিসাব, ​​রড ওজন নিরূপণ এবং ড্রয়িং ড্যাশবোর্ড সম্পূর্ণ অফলাইনেই ব্যবহার করতে পারেন।`,
         timestamp: new Date(),
         mode: currentMode
       };
