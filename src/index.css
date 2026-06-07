@@ -1,3 +1,26 @@
 @import url('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
 @import "tailwindcss";
 
+/* Lock page viewport scroll completely to keep bottom input bar and header 100% fixed */
+html, body, #root {
+  height: 100vh !important;
+  width: 100vw !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+}
+
+/* KaTeX Layout and Height Overrides to prevent unintended vertical growth or scrollbars */
+.katex-display {
+  margin: 0 !important;
+  padding: 4px 0 !important;
+  overflow-y: hidden !important;
+}
+
+.katex {
+  white-space: nowrap !important;
+}
+

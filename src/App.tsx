@@ -233,7 +233,7 @@ export default function App() {
     {
       id: "welcome",
       role: "model",
-      content: "স্বাগতম! আমি **RPI Civil Engineering Master AI Assistant**।\n\nআমি আপনাকে সিভিল ইঞ্জিনিয়ারিং প্রাক্কলন (Estimation), AutoCAD ড্রয়িং কোড, সরকারি/বেসরকারি চাকুরির ভাইভা প্রস্তুতি, এবং ডিপ্লোমা সেমিস্টার পরীক্ষার গাণিতিক ব্যাখ্যায় সাহায্য করতে পারি।\n\n**শুরু করতে নিচে কোনো প্রশ্ন লিখুন অথবা যেকোনো বিশেষ অধ্যয়ন মোড সিলেক্ট করুন!**",
+      content: "আসসালামু আলাইকুম। **RPI Civil Master AI Assistant**-এ আপনাকে স্বাগতম।\n\nআমি আপনাকে সিভিল ইঞ্জিনিয়ারিং প্রাক্কলন (Estimation / BOQ), AutoCAD কমান্ডস, চাকুরির ভাইভা প্রস্তুতি ও সেমিস্টার ফাইনালের গাণিতিক সমস্যা সমাধানে পেশাদার সহায়তা প্রদানের জন্য প্রস্তুত। কোনো প্রশ্ন জিজ্ঞাসা করতে নিচে টাইপ করুন।\n\n*Created by:* **MD Mushfiqur Rahman** (Civil 2024-25), Rajshahi Polytechnic Institute.",
       timestamp: new Date()
     }
   ]);
@@ -270,9 +270,25 @@ export default function App() {
 
   // Auto scroll references
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll to the bottom immediately
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+
+    // Secondary delayed scroll to lock position once KaTeX equation styling and layout finishes rendering in browser
+    const scrollTimer = setTimeout(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    }, 120);
+
+    return () => clearTimeout(scrollTimer);
   }, [messages, isSending]);
 
   // Adjust active mode based on Tab for cohesive UI experience
@@ -696,12 +712,12 @@ export default function App() {
         {/* Civil Student Portfolio profile bottom footer */}
         <div className="p-3 border-t border-slate-850 bg-slate-950/40">
           <div className="flex items-center space-x-2.5">
-            <div className="w-7.5 h-7.5 rounded-full bg-blue-500 text-white font-extrabold flex items-center justify-center shadow-inner shrink-0 text-[11px]">
-              RPI
+            <div className="w-7.5 h-7.5 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center shadow-inner shrink-0 text-[11px]">
+              MR
             </div>
             <div className="text-[11px] truncate leading-tight">
-              <div className="font-semibold text-slate-200">ডিপ্লোমা ইঞ্জি: শিক্ষার্থী</div>
-              <div className="text-[9px] text-blue-400 truncate opacity-90">রাজশাহী পলিটেকনিক ইনস্টিটিউট</div>
+              <div className="font-semibold text-slate-200">MD Mushfiqur Rahman</div>
+              <div className="text-[9px] text-blue-400 truncate opacity-90">Creator | Civil 2024-25</div>
             </div>
           </div>
         </div>
@@ -710,7 +726,7 @@ export default function App() {
       {/* Main Workspace Frame container */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Header Section */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0 shadow-sm z-10">
+        <header className="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 shrink-0 shadow-sm z-10">
           <div className="flex items-center space-x-2 text-sm text-slate-500 min-w-0">
             {/* Mobile Hamburger Drawer Trigger */}
             <button
@@ -817,7 +833,10 @@ export default function App() {
               {/* Chat container */}
               <div className="flex-1 flex flex-col bg-white rounded-none border-0 overflow-hidden h-full">
                 {/* Chat feed list */}
-                <div className="flex-grow p-6 overflow-y-auto space-y-6 bg-slate-50/50">
+                <div 
+                  ref={chatContainerRef}
+                  className="flex-grow p-6 overflow-y-auto space-y-6 bg-slate-50/50"
+                >
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
@@ -853,7 +872,7 @@ export default function App() {
                       </div>
 
                       <div
-                        className={`p-4 text-sm leading-relaxed rounded-2xl border ${
+                        className={`p-3 md:p-3.5 text-xs md:text-[13px] leading-relaxed rounded-2xl border ${
                           msg.role === "user"
                             ? "bg-blue-600 text-white border-blue-500 rounded-tr-none shadow-md shadow-blue-500/10"
                             : "bg-white text-slate-800 border-slate-200 rounded-tl-none shadow-sm"
@@ -878,7 +897,7 @@ export default function App() {
                         )}
                         
                         {msg.role === "user" ? (
-                          <p className="whitespace-pre-line prose max-w-none text-left">
+                          <p className="whitespace-pre-line text-left text-xs md:text-[13px] leading-relaxed">
                             {msg.content}
                           </p>
                         ) : (
@@ -912,10 +931,10 @@ export default function App() {
                 </div>
 
                 {/* Input action panels bar */}
-                <div className="p-4 bg-white border-t border-slate-200">
+                <div className="p-2 md:p-2.5 bg-white border-t border-slate-200">
                   {/* File Upload Attachment Preview overlay wrapper */}
                   {attachment && (
-                    <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 mb-3">
+                    <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 mb-2">
                       <div className="flex items-center space-x-2 text-xs font-mono font-bold text-blue-800">
                         <span className="p-1 bg-blue-200 rounded text-blue-800">IMAGE</span>
                         <span className="truncate max-w-xs">{attachment.name}</span>
@@ -931,7 +950,7 @@ export default function App() {
 
                   {/* Micro recording warning */}
                   {isRecording && (
-                    <div className="text-xs bg-red-50 border border-red-200 text-red-600 rounded-lg px-4 py-2 mb-3 flex items-center justify-between">
+                    <div className="text-xs bg-red-50 border border-red-200 text-red-600 rounded-lg px-3 py-1.5 mb-2 flex items-center justify-between">
                       <span className="flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
                         {speechFeedback || "ভয়েস রেকর্ডার চালু আছে... দয়া করে প্রশ্ন বলুন"}
@@ -946,13 +965,13 @@ export default function App() {
                   )}
 
                   {/* Main Input Text Field */}
-                  <div className="flex items-center bg-[#F8FAFC] border border-slate-350 focus-within:border-blue-500 rounded-xl p-2.5 shadow-inner transition-colors">
+                  <div className="flex items-center bg-[#F8FAFC] border border-slate-300 focus-within:border-blue-500 rounded-lg p-1.5 shadow-inner transition-colors">
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       title="ড্রয়িং ফটো আপলোড"
-                      className="p-2 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors"
+                      className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors shrink-0"
                     >
-                      <Upload className="w-5 h-5" />
+                      <Upload className="w-4 h-4" />
                     </button>
                     
                     <input
@@ -968,40 +987,40 @@ export default function App() {
                       value={inputVal}
                       onChange={(e) => setInputVal(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
-                      placeholder="এখানে বাংলা বা ইংরেজিতে প্রশ্ন লিখুন (যেমন: ১টি সাধারণ স্ল্যাবের থিকনেস কত মিলিমিটার?)..."
-                      className="flex-1 px-4 py-2 text-sm text-slate-800 outline-none bg-transparent"
+                      placeholder="এখানে বাংলা বা ইংরেজিতে প্রশ্ন লিখুন..."
+                      className="flex-1 px-3 py-1 text-xs md:text-sm text-slate-800 outline-none bg-transparent min-w-0"
                     />
 
                     {/* Real Voice Input for Chatbot */}
                     <button
                       onClick={handleMicrophoneClick}
                       title="কথা বলুন (ভয়েস টাইপিং)"
-                      className={`p-2 rounded-lg transition-all mr-1.5 ${
+                      className={`p-1.5 rounded-md transition-all mr-1 ${
                         isRecording ? "bg-red-600 text-white animate-pulse" : "hover:bg-slate-250 text-slate-500"
-                      }`}
+                      } shrink-0`}
                     >
                       {isRecording ? (
-                        <MicOff className="w-5 h-5" />
+                        <MicOff className="w-4 h-4" />
                       ) : (
-                        <Mic className="w-5 h-5" />
+                        <Mic className="w-4 h-4" />
                       )}
                     </button>
 
                     <button
                       onClick={() => handleSendChat()}
-                      className="bg-blue-600 hover:bg-blue-700 font-semibold text-white px-5 py-2 rounded-lg text-sm transition-all shadow-md shadow-blue-600/10"
+                      className="bg-blue-600 hover:bg-blue-700 font-semibold text-white px-3.5 py-1.5 rounded-md text-xs transition-all shadow-md shadow-blue-600/10 flex items-center justify-center shrink-0"
                     >
                       <span className="hidden sm:inline">পাঠান</span>
-                      <Send className="w-4 h-4 sm:ml-2 inline-block" />
+                      <Send className="w-3.5 h-3.5 sm:ml-1.5 inline-block" />
                     </button>
                   </div>
 
                   {/* Micro Interaction suggestions tags */}
-                  <div className="flex items-center mt-2.5 space-x-2 text-[10px] text-slate-400">
+                  <div className="flex items-center mt-1.5 space-x-2 text-[10px] text-slate-400">
                     <span className="font-bold uppercase tracking-wider text-slate-500 shrink-0">
                       দ্রুত হেল্পারস:
                     </span>
-                    <span className="flex gap-2 font-mono scrollbar-none overflow-x-auto whitespace-nowrap">
+                    <span className="flex gap-1.5 font-mono scrollbar-none overflow-x-auto whitespace-nowrap">
                       <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-slate-600">
                         📷 ড্রয়িং স্পেক্স বিশ্লেষণ
                       </span>
