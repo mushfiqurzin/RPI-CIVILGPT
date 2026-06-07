@@ -1144,6 +1144,116 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Companion RPI Civil Portal Panel - Guidelines & Benefits Guide */}
+              <div className="hidden lg:flex flex-col w-80 shrink-0 bg-slate-50 border-l border-slate-200 h-full overflow-y-auto p-5 select-none">
+                <div className="flex items-center space-x-2 pb-3 border-b border-slate-200 mb-4 shrink-0">
+                  <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+                  <div>
+                    <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                      RPI সিভিল পোর্টাল
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-semibold">
+                      সুযোগ-সুবিধা ও ব্যবহার নির্দেশিকা
+                    </p>
+                  </div>
+                </div>
+
+                {/* Creator Dedication Banner */}
+                <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-blue-950 text-white rounded-xl p-3.5 mb-4 border border-blue-900/30 shadow-md">
+                  <div className="flex items-center space-x-2.5 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-xs shadow-md shadow-blue-500/20 ring-2 ring-white/10 shrink-0 uppercase">
+                      MR
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-100 uppercase tracking-tight">MD Mushfiqur Rahman</h4>
+                      <p className="text-[9px] text-blue-400 font-semibold font-mono">Civil Engineering | Session 2024-25</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-300 leading-relaxed font-semibold">
+                    এই বুদ্ধিমান প্ল্যাটফর্মটি **রাজশাহী পলিটেকনিক ইনস্টিটিউট (RPI)**-এর সিভিল বিভাগের ঐতিহ্য ও ছাত্র-শিক্ষকদের পড়াশোনা ও বাস্তব কাজের সর্বাধিক সুবিধার জন্য কাস্টমাইজড করে তৈরি করা হয়েছে।
+                  </p>
+                </div>
+
+                {/* How to get max opportunities (সুযোগ-সুবিধা সমূহ) */}
+                <div className="space-y-3.5 flex-1">
+                  <h4 className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase mb-1">
+                    সর্বোচ্চ সুবিধা পাওয়ার টিপস:
+                  </h4>
+
+                  {/* Benefit 1 */}
+                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
+                    <div className="p-1 bg-blue-50 text-blue-600 rounded mt-0.5">
+                      <Layers className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800">১. ৬টি বিশেষ পড়াশোনা মোড</h5>
+                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                        উপরের মোড ড্রপডাউন থেকে **General**, **Viva**, **Estimation**, **AutoCAD**, **Math** বা **Project** সিলেক্ট করুন। মোড পরিবর্তন করলে উত্তরটি সেই বিষয়ের জন্য একদম নিখুঁত হবে।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Benefit 2 */}
+                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
+                    <div className="p-1 bg-indigo-50 text-indigo-600 rounded mt-0.5">
+                      <Terminal className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800">২. বাংলায় এবং রোমান হরফে চ্যাট</h5>
+                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                        ইচ্ছেমতো বাংলা স্ক্রিপ্টে অথবা সরাসরি Banglish হরফে (যেমন: <span className="font-mono text-indigo-600 bg-slate-50 px-0.5 py-0.25 rounded">"rod er weight ber koro"</span>) প্রশ্ন করতে পারেন। AI আপনার ভাষা নির্ভুলভাবে বুঝে নেবে।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Benefit 3 */}
+                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
+                    <div className="p-1 bg-emerald-50 text-emerald-600 rounded mt-0.5">
+                      <Upload className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800">৩. ড্রয়িং ও ম্যাথ এর ফটোকপি আপলোড</h5>
+                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                        চ্যাটের আপলোড আইকনে ক্লিক করে যেকোনো সিভিল ড্রয়িং, ডিজাইন শিট বা খাতার অঙ্কের ছবি আপলোড করে "এটি সমাধান করো" লিখে কমান্ড করুন।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Benefit 4 */}
+                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
+                    <div className="p-1 bg-teal-50 text-teal-600 rounded mt-0.5">
+                      <Mic className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800">৪. মুখে কথা বলে টাইপিং</h5>
+                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                        চ্যাটবক্সে থাকা মাইক্রোফোন বাটন চাপ দিয়ে কী-বোর্ডে টাইপ করার ঝামেলা ছাড়াই মুখে বাংলা বা ইংরেজিতে প্রশ্ন করে সময় সাশ্রয় করুন।
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Benefit 5 */}
+                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
+                    <div className="p-1 bg-amber-50 text-amber-600 rounded mt-0.5">
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800">৫. অফলাইন রিয়েল-টাইম এস্টিমেশন স্যুট</h5>
+                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                        বালি, সিমেন্ট, ইটের হিসাব অথবা রডের রিয়েল-টাইম বার বেন্ডিং শিডিউল (BBS) ইন্টারনেট ছাড়াই হিসাব করতে বাম প্যানেলে ডেডিকেটেড ট্যাব রয়েছে।
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer status indicator */}
+                <div className="mt-4 pt-3 border-t border-slate-200 text-center">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-full text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Gemini Live Support Connected
+                  </span>
+                </div>
+              </div>
 
             </div>
           )}
