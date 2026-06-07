@@ -716,7 +716,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#F1F5F9] text-slate-800 font-sans overflow-hidden">
+    <div className="flex h-screen supports-[height:100dvh]:h-[100dvh] w-full bg-[#F1F5F9] text-slate-800 font-sans overflow-hidden">
       {/* Mobile Drawer Overlay Backdrop */}
       {mobileMenuOpen && (
         <div 
@@ -726,7 +726,7 @@ export default function App() {
       )}
 
       {/* Left Navigation Sidebar */}
-      <aside className={`fixed md:sticky top-0 bottom-0 left-0 z-50 w-64 bg-[#0F172A] text-white flex flex-col shrink-0 border-r border-slate-900 shadow-xl transition-transform duration-300 transform ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 h-screen`}>
+      <aside className={`fixed md:sticky top-0 bottom-0 left-0 z-50 w-64 bg-[#0F172A] text-white flex flex-col shrink-0 border-r border-slate-900 shadow-xl transition-transform duration-300 transform ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 h-screen supports-[height:100dvh]:h-[100dvh]`}>
         <div className="p-4 border-b border-slate-850 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="p-1.5 px-2 bg-blue-600 rounded text-caps font-extrabold text-[11px] shadow-sm tracking-wide">
