@@ -50,6 +50,40 @@ const AUTOCAD_COMMANDS = [
   { command: "UNITS", shortcut: "UN", category: "Format", descBangla: "ড্রয়িং এর দৈর্ঘ্য ও কোণের পরিমাপক ইউনিট (Feet/Inch/Millimeter) সেট করার জন্য ব্যবহার করা হয়।", descEnglish: "Controls coordinate and angle display formats and precision.", useCase: "UN [Enter] -> Set Architectural for Feet-Inches / Decimal for millimeters" }
 ] as const;
 
+// Interactive RPI Civil Portal Mini-Quiz Question Bank
+const SIDEBAR_QUIZ_QUESTIONS = [
+  {
+    question: "১ ব্যাগ (50 kg) সিমেন্টের আয়তন কত সিএফটি (CFT)?",
+    options: ["১.০ CFT", "১.২৫ CFT", "১.৫০ CFT", "২.০ CFT"],
+    correctIndex: 1,
+    explanation: "১ ব্যাগ সিমেন্ট = ১.২৫ CFT বা ০.০৩৪৭ m³। এটি সিভিল প্রাক্কলনের সবচেয়ে গুরুত্বপূর্ণ বেসিক মান।"
+  },
+  {
+    question: "ভিজা কংক্রিটের আয়তনকে কত ড্রাই ফ্যাক্টর (Dry Factor) দিয়ে গুণ করতে হয়?",
+    options: ["১.০৫", "১.২২", "১.৫৪", "১.৮৫"],
+    correctIndex: 2,
+    explanation: "কংক্রিটের শুষ্ক উপাদান বের করতে আমরা ১.৫৪ (বা ১.৫ থেকে ১.৬) গুণক ব্যবহার করে থাকি।"
+  },
+  {
+    question: "১০ মিলিমিটার (10mm or ৩ সুতা) রডের প্রতি মিটার দৈর্ঘ্যের ওজন কত কেজি?",
+    options: ["০.৩৯ কেজি", "০.৬২ কেজি", "০.৮৮ কেজি", "১.২১ কেজি"],
+    correctIndex: 1,
+    explanation: "রডের প্রতি মিটারের সুত্র d²/162.2 অনুযায়ী: (10*10)/162.2 = ০.৬১৭ কেজি/মিটার যা প্রায় ০.৬২ কেজি।"
+  },
+  {
+    question: "৫ ইঞ্চি ইটের দেয়ালে প্রতি ১০০ স্কয়ার ফিট (SFT) গাথুনিতে সাধারণত কয়টি ইট লাগে?",
+    options: ["৩০০ টি", "৪১০ টি", "৫০০ টি", "৬৫০ টি"],
+    correctIndex: 2,
+    explanation: "৫ ইঞ্চি সলিড গাথুনিতে প্রতি sft-তে ৫টি ইট লাগে। সুতরাং ১০০ sft দেয়ালের জন্য ৫০০টি ইট আবশ্যক।"
+  },
+  {
+    question: "অটোক্যাডে কোন বাউন্ডারির সাপেক্ষে রেখা ট্রিম (TRIM) করার শর্টকাট কমান্ড কী?",
+    options: ["C [Enter]", "L [Enter]", "TR [Enter]", "EX [Enter]"],
+    correctIndex: 2,
+    explanation: "অপ্রয়োজনীয় অংশ কাটতে TRIM এর শর্টকাট হলো TR [Enter]। এক্সটেন্ডের জন্য EX [Enter]।"
+  }
+];
+
 // Quick suggestions for student interactions
 const QUICK_SUGGESTIONS = [
   "Singly Reinforced Beam এর ডিজাইন ধাপসমূহ কী কী?",
@@ -222,6 +256,19 @@ const OFFLINE_VIVA_BANK = [
 export default function App() {
   // Tabs State
   const [activeTab, setActiveTab] = useState<"study_desk" | "estimation" | "autocad" | "viva_board" | "office_projects">("study_desk");
+  
+  // RPI Companion Sidebar tab states
+  const [sidebarTab, setSidebarTab] = useState<"tips" | "formulas" | "quiz">("tips");
+  
+  // Interactive Sidebar Quiz States
+  const [sidebarQuizIndex, setSidebarQuizIndex] = useState(0);
+  const [selectedSidebarAnswer, setSelectedSidebarAnswer] = useState<number | null>(null);
+  const [isSidebarAnswered, setIsSidebarAnswered] = useState(false);
+  const [sidebarQuizScore, setSidebarQuizScore] = useState(0);
+  
+  // Quick Sidebar Concrete Converter States
+  const [quickCftVolume, setQuickCftVolume] = useState<number>(10);
+  const [quickRatio, setQuickRatio] = useState<string>("1:1.5:3"); // "1:1.5:3" or "1:2:4" or "1:3:6"
   
   // App-wide Active Study Mode
   const [activeMode, setActiveMode] = useState<StudyMode>("General Mode");
@@ -434,7 +481,7 @@ export default function App() {
       const errorBotMsg: Message = {
         id: Math.random().toString(),
         role: "model",
-        content: `⚠️ **নেটওয়ার্ক সংযোগ বা এপিআই কী বিভ্রান্তি—Groq API!** \n\n${err.message || "Groq API ক্লাউড সংযোগ ব্যর্থ হয়েছে।"}\n\n**কীভাবে সমাধান করবেন:** \n১. ডানদিকের AI Studio Settings (Secrets Panel)-এ আপনার \`GROQ_API_KEY\` যুক্ত আছে কিনা তা নিশ্চিত করুন।\n২. আপনি চাইলে অফলাইন মডিউলসমূহ যেমন ইটের দেয়ালের হিসাব, ​​রড ওজন নিরূপণ এবং ড্রয়িং ড্যাশবোর্ড সম্পূর্ণ অফলাইনেই ব্যবহার করতে পারেন।`,
+        content: `⚠️ **নেটওয়ার্ক সংযোগ বা এপিআই কী বিভ্রান্তি—Gemini API!** \n\n${err.message || "Gemini API ক্লাউড সংযোগ ব্যর্থ হয়েছে।"}\n\n**কীভাবে সমাধান করবেন:** \n১. ডানদিকের AI Studio Settings (Secrets Panel)-এ আপনার \`GEMINI_API_KEY\` যুক্ত আছে কিনা তা নিশ্চিত করুন।\n২. আপনি চাইলে অফলাইন মডিউলসমূহ যেমন ইটের দেয়ালের হিসাব, ​​রড ওজন নিরূপণ এবং ড্রয়িং ড্যাশবোর্ড সম্পূর্ণ অফলাইনেই ব্যবহার করতে পারেন।`,
         timestamp: new Date(),
         mode: currentMode
       };
@@ -1145,109 +1192,336 @@ export default function App() {
               </div>
 
               {/* Companion RPI Civil Portal Panel - Guidelines & Benefits Guide */}
-              <div className="hidden lg:flex flex-col w-80 shrink-0 bg-slate-50 border-l border-slate-200 h-full overflow-y-auto p-5 select-none">
-                <div className="flex items-center space-x-2 pb-3 border-b border-slate-200 mb-4 shrink-0">
-                  <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+              <div className="hidden lg:flex flex-col w-80 shrink-0 bg-slate-50 border-l border-slate-200 h-full overflow-y-auto p-4 select-none">
+                <div className="flex items-center space-x-2 pb-2.5 border-b border-slate-200 mb-3 shrink-0">
+                  <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
                   <div>
                     <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                       RPI সিভিল পোর্টাল
                     </h3>
-                    <p className="text-[10px] text-slate-500 font-semibold">
-                      সুযোগ-সুবিধা ও ব্যবহার নির্দেশিকা
+                    <p className="text-[10px] text-slate-500 font-semibold leading-none mt-0.5">
+                      সুযোগ-সুবিধা ও স্টাডি মেট
                     </p>
                   </div>
                 </div>
 
                 {/* Creator Dedication Banner */}
-                <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-blue-950 text-white rounded-xl p-3.5 mb-4 border border-blue-900/30 shadow-md">
-                  <div className="flex items-center space-x-2.5 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-xs shadow-md shadow-blue-500/20 ring-2 ring-white/10 shrink-0 uppercase">
+                <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-blue-950 text-white rounded-xl p-3 mb-3 border border-blue-900/30 shadow-md">
+                  <div className="flex items-center space-x-2 mb-1.5">
+                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-extrabold text-[10px] shadow-sm ring-2 ring-white/10 shrink-0 uppercase">
                       MR
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-100 uppercase tracking-tight">MD Mushfiqur Rahman</h4>
-                      <p className="text-[9px] text-blue-400 font-semibold font-mono">Civil Engineering | Session 2024-25</p>
+                      <h4 className="text-[11px] font-bold text-slate-100 uppercase tracking-tight leading-none">MD Mushfiqur Rahman</h4>
+                      <p className="text-[8px] text-blue-400 font-semibold font-mono mt-0.5">Civil Department | 2024-25</p>
                     </div>
                   </div>
                   <p className="text-[10px] text-slate-300 leading-relaxed font-semibold">
-                    এই বুদ্ধিমান প্ল্যাটফর্মটি **রাজশাহী পলিটেকনিক ইনস্টিটিউট (RPI)**-এর সিভিল বিভাগের ঐতিহ্য ও ছাত্র-শিক্ষকদের পড়াশোনা ও বাস্তব কাজের সর্বাধিক সুবিধার জন্য কাস্টমাইজড করে তৈরি করা হয়েছে।
+                    রাজশাহী পলিটেকনিক ইনস্টিটিউট (RPI)-এর ঐতিহ্য ও ছাত্র-শিক্ষকদের পড়াশোনা ও কাজের সর্বাধিক সুবিধার জন্য এই প্ল্যাটফর্মটি তৈরি।
                   </p>
                 </div>
 
-                {/* How to get max opportunities (সুযোগ-সুবিধা সমূহ) */}
-                <div className="space-y-3.5 flex-1">
-                  <h4 className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase mb-1">
-                    সর্বোচ্চ সুবিধা পাওয়ার টিপস:
-                  </h4>
+                {/* Sidebar Sub Tab Switcher */}
+                <div className="grid grid-cols-3 gap-1 bg-slate-200/50 p-1 rounded-lg border border-slate-250 mb-3 shrink-0">
+                  <button
+                    onClick={() => setSidebarTab("tips")}
+                    className={`py-1 text-[10px] font-bold rounded-md transition-all ${
+                      sidebarTab === "tips" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    💡 টিপস
+                  </button>
+                  <button
+                    onClick={() => setSidebarTab("formulas")}
+                    className={`py-1 text-[10px] font-bold rounded-md transition-all ${
+                      sidebarTab === "formulas" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    📐 ক্যালক
+                  </button>
+                  <button
+                    onClick={() => setSidebarTab("quiz")}
+                    className={`py-1 text-[10px] font-bold rounded-md transition-all ${
+                      sidebarTab === "quiz" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    ✏️ কুইজ
+                  </button>
+                </div>
 
-                  {/* Benefit 1 */}
-                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
-                    <div className="p-1 bg-blue-50 text-blue-600 rounded mt-0.5">
-                      <Layers className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-800">১. ৬টি বিশেষ পড়াশোনা মোড</h5>
-                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
-                        উপরের মোড ড্রপডাউন থেকে **General**, **Viva**, **Estimation**, **AutoCAD**, **Math** বা **Project** সিলেক্ট করুন। মোড পরিবর্তন করলে উত্তরটি সেই বিষয়ের জন্য একদম নিখুঁত হবে।
-                      </p>
-                    </div>
-                  </div>
+                {/* TAB CONTENT */}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  
+                  {/* TAB 1: TIPS */}
+                  {sidebarTab === "tips" && (
+                    <div className="space-y-3">
+                      <h4 className="text-[9px] font-extrabold text-slate-400 tracking-wider uppercase">
+                        সর্বোচ্চ সুবিধা পাওয়ার টিপস:
+                      </h4>
 
-                  {/* Benefit 2 */}
-                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
-                    <div className="p-1 bg-indigo-50 text-indigo-600 rounded mt-0.5">
-                      <Terminal className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-800">২. বাংলায় এবং রোমান হরফে চ্যাট</h5>
-                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
-                        ইচ্ছেমতো বাংলা স্ক্রিপ্টে অথবা সরাসরি Banglish হরফে (যেমন: <span className="font-mono text-indigo-600 bg-slate-50 px-0.5 py-0.25 rounded">"rod er weight ber koro"</span>) প্রশ্ন করতে পারেন। AI আপনার ভাষা নির্ভুলভাবে বুঝে নেবে।
-                      </p>
-                    </div>
-                  </div>
+                      {/* Benefit 1 */}
+                      <div className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-200/80 shadow-xs">
+                        <div className="p-1 bg-blue-50 text-blue-600 rounded mt-0.5 shrink-0">
+                          <Layers className="w-3 h-3" />
+                        </div>
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-800">১. ৬টি চমৎকার লার্নিং মোড</h5>
+                          <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                            মোড ড্রপডাউন থেকে **General**, **Viva**, **Estimation**, **AutoCAD**, **Math** বা **Project** সিলেক্ট করে প্রশ্ন করুন।
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Benefit 3 */}
-                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
-                    <div className="p-1 bg-emerald-50 text-emerald-600 rounded mt-0.5">
-                      <Upload className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-800">৩. ড্রয়িং ও ম্যাথ এর ফটোকপি আপলোড</h5>
-                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
-                        চ্যাটের আপলোড আইকনে ক্লিক করে যেকোনো সিভিল ড্রয়িং, ডিজাইন শিট বা খাতার অঙ্কের ছবি আপলোড করে "এটি সমাধান করো" লিখে কমান্ড করুন।
-                      </p>
-                    </div>
-                  </div>
+                      {/* Benefit 2 */}
+                      <div className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-200/80 shadow-xs">
+                        <div className="p-1 bg-indigo-50 text-indigo-600 rounded mt-0.5 shrink-0">
+                          <Terminal className="w-3 h-3" />
+                        </div>
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-800">২. বাংলা ও বাংলিশে চ্যাট</h5>
+                          <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                            ইচ্ছেমত বাংলিশে (যেমন: <span className="font-mono text-indigo-600">"rod weight formula ki"</span>) প্রশ্ন করুন, রোবট নির্ভুল বুঝবে।
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Benefit 4 */}
-                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
-                    <div className="p-1 bg-teal-50 text-teal-600 rounded mt-0.5">
-                      <Mic className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-800">৪. মুখে কথা বলে টাইপিং</h5>
-                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
-                        চ্যাটবক্সে থাকা মাইক্রোফোন বাটন চাপ দিয়ে কী-বোর্ডে টাইপ করার ঝামেলা ছাড়াই মুখে বাংলা বা ইংরেজিতে প্রশ্ন করে সময় সাশ্রয় করুন।
-                      </p>
-                    </div>
-                  </div>
+                      {/* Benefit 3 */}
+                      <div className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-200/80 shadow-xs">
+                        <div className="p-1 bg-emerald-50 text-emerald-600 rounded mt-0.5 shrink-0">
+                          <Upload className="w-3 h-3" />
+                        </div>
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-800">৩. খাতাপত্র বা ড্রয়িং আপলোড</h5>
+                          <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                            ক্লিক করুন আপলোড আইকনে, ড্রয়িং শীট বা খাতার অঙ্কের ছবি দিন এবং সরাসরি সমাধান চেয়ে চ্যাট করুন।
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Benefit 5 */}
-                  <div className="flex items-start gap-2.5 bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-sm">
-                    <div className="p-1 bg-amber-50 text-amber-600 rounded mt-0.5">
-                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      {/* Benefit 4 */}
+                      <div className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-200/80 shadow-xs">
+                        <div className="p-1 bg-teal-50 text-teal-600 rounded mt-0.5 shrink-0">
+                          <Mic className="w-3 h-3" />
+                        </div>
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-800">৪. ভয়েস টাইপিং সুবিধা</h5>
+                          <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                            টাইপিং কষ্ট এড়াতে মাইক্রোফোন বাটন চাপ দিয়ে বাংলা বা ইংরেজি মুখে বলেই ইনপুট দিন।
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Benefit 5 */}
+                      <div className="flex items-start gap-2 bg-white p-2 rounded-lg border border-slate-200/80 shadow-xs">
+                        <div className="p-1 bg-amber-50 text-amber-600 rounded mt-0.5 shrink-0">
+                          <FileSpreadsheet className="w-3 h-3" />
+                        </div>
+                        <div>
+                          <h5 className="text-[11px] font-bold text-slate-800">৫. অফলাইন ইন্টেলিজেন্ট মডিউলস</h5>
+                          <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
+                            ইন্টারনেট না থাকলে বাম প্যানেল থেকে ইটের হিসাব, ঢালাই হিসাব ও বার বেন্ডিং শিডিউল ব্যবহার করুন।
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h5 className="text-xs font-bold text-slate-800">৫. অফলাইন রিয়েল-টাইম এস্টিমেশন স্যুট</h5>
-                      <p className="text-[10px] text-slate-500 leading-normal mt-0.5">
-                        বালি, সিমেন্ট, ইটের হিসাব অথবা রডের রিয়েল-টাইম বার বেন্ডিং শিডিউল (BBS) ইন্টারনেট ছাড়াই হিসাব করতে বাম প্যানেলে ডেডিকেটেড ট্যাব রয়েছে।
-                      </p>
-                    </div>
-                  </div>
+                  )}
+
+                  {/* TAB 2: QUICK CALCULATOR */}
+                  {sidebarTab === "formulas" && (() => {
+                    const dryVol = quickCftVolume * 1.54;
+                    const rParts = quickRatio.split(":").map(Number);
+                    const sumR = rParts.reduce((acc, v) => acc + (isNaN(v) ? 0 : v), 0);
+                    
+                    const cementBag = sumR > 0 ? ((dryVol * (rParts[0] || 0) / sumR) / 1.25) : 0;
+                    const sandSft = sumR > 0 ? (dryVol * (rParts[1] || 0) / sumR) : 0;
+                    const chipsSft = sumR > 0 ? (dryVol * (rParts[2] || 0) / sumR) : 0;
+
+                    return (
+                      <div className="space-y-3">
+                        <h4 className="text-[9px] font-extrabold text-slate-400 tracking-wider uppercase">
+                          ইনস্ট্যান্ট ঢালাই ক্যালকুলেটর (অফলাইন)
+                        </h4>
+
+                        <div className="bg-white p-3 rounded-lg border border-slate-200/80 shadow-xs space-y-2.5">
+                          {/* Wet Volume Input */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                              ভিজা আয়তন (Wet Volume, CFT):
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={quickCftVolume}
+                              onChange={(e) => setQuickCftVolume(Math.max(1, Number(e.target.value)))}
+                              className="w-full text-xs font-bold bg-slate-50 border border-slate-250 p-1.5 rounded text-slate-850 outline-none focus:border-blue-500"
+                            />
+                          </div>
+
+                          {/* Ratio Selector */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                              ঢালাই অনুপাত (Concrete Ratio):
+                            </label>
+                            <select
+                              value={quickRatio}
+                              onChange={(e) => setQuickRatio(e.target.value)}
+                              className="w-full text-xs bg-slate-50 border border-slate-250 p-1.5 rounded text-slate-800 outline-none focus:border-blue-500"
+                            >
+                              <option value="1:1.5:3">১ : ১.৫ : ৩ (M20 গ্রেড - স্ট্যান্ডার্ড)</option>
+                              <option value="1:2:4">১ : ২ : ৪ (M15 গ্রেড - স্ল্যাব/বীম)</option>
+                              <option value="1:3:6">১ : ৩ : ৬ (M10 গ্রেড - ফাউন্ডেশন বেস)</option>
+                              <option value="1:1:2">১ : ১ : ২ (M25 গ্রেড - উচ্চ স্ট্রেন্থ)</option>
+                            </select>
+                          </div>
+
+                          {/* Dynamic Results Box */}
+                          <div className="bg-slate-50 border border-slate-200 rounded p-2.5 space-y-1.5 text-[11px]">
+                            <div className="flex justify-between border-b border-slate-250 pb-1">
+                              <span className="text-slate-500 font-medium">শুকনা আয়তন (Dry Volume):</span>
+                              <span className="font-extrabold font-mono text-slate-850">{dryVol.toFixed(2)} CFT</span>
+                            </div>
+                            <div className="flex justify-between items-center text-blue-750 font-bold">
+                              <span>সিমেন্ট (Cement Bags):</span>
+                              <span className="font-mono bg-blue-100 text-blue-800 px-1 py-0.25 rounded text-xs leading-none">
+                                {cementBag.toFixed(2)} ব্যাগ
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 font-medium font-mono">বালি (Sand):</span>
+                              <span className="font-extrabold text-slate-800">{sandSft.toFixed(2)} SFT</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 font-medium">খোয়া/পাথর (Chips):</span>
+                              <span className="font-extrabold text-slate-800">{chipsSft.toFixed(2)} CFT</span>
+                            </div>
+                          </div>
+                          
+                          <p className="text-[9px] text-slate-400 leading-normal italic">
+                            * ড্রাই ফ্যাক্টর сухо শুকনো উপাদানের ফাঁপা স্থান সঙ্কোচন পূরণের জন্য ১.৫৪ ধরা হয়েছে। ১ ব্যাগ সিমেন্ট = ১.২৫ CFT।
+                          </p>
+                        </div>
+
+                        {/* Quick Formulas Cheat Sheet */}
+                        <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-2.5 text-[10px] space-y-1 text-blue-900 leading-normal">
+                          <span className="font-extrabold block text-blue-950 text-[10.5px] uppercase">
+                            স্থপতি সূত্রাবলী (Quick Cheat Sheet):
+                          </span>
+                          <p>• <strong>ইট গাঁথুনি ৫"</strong>: প্রতি sft-তে ৫টি সাধারণ লাল ইট লাগবে।</p>
+                          <p>• <strong>রডের মিটার সূত্র</strong>: ওজন = D²/১৬২.২ কেজি/মিটার</p>
+                          <p>• <strong>রডের ফুট সূত্র</strong>: ওজন = D²/৫৩২.১৭ কেজি/ফুট</p>
+                          <p>• <strong>এফ.এম (FM)</strong>: বালির সূক্ষ্মতার মডুলাস নির্দেশ করে।</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* TAB 3: MINI QUIZ PREPARATION GAME */}
+                  {sidebarTab === "quiz" && (() => {
+                    const activeQ = SIDEBAR_QUIZ_QUESTIONS[sidebarQuizIndex];
+                    
+                    const handleAnswerClick = (index: number) => {
+                      if (isSidebarAnswered) return;
+                      setSelectedSidebarAnswer(index);
+                      setIsSidebarAnswered(true);
+                      if (index === activeQ.correctIndex) {
+                        setSidebarQuizScore(prev => prev + 20);
+                      }
+                    };
+
+                    const handleNextQuestion = () => {
+                      setSelectedSidebarAnswer(null);
+                      setIsSidebarAnswered(false);
+                      if (sidebarQuizIndex < SIDEBAR_QUIZ_QUESTIONS.length - 1) {
+                        setSidebarQuizIndex(prev => prev + 1);
+                      } else {
+                        setSidebarQuizIndex(0);
+                        setSidebarQuizScore(0);
+                      }
+                    };
+
+                    return (
+                      <div className="space-y-3 animate-fade-in">
+                        <div className="flex justify-between items-center transition-all">
+                          <h4 className="text-[9px] font-extrabold text-slate-400 tracking-wider uppercase">
+                            RPI সিভিল কুইজ গেম
+                          </h4>
+                          <span className="text-[10px] font-bold text-blue-600 font-mono bg-blue-55 px-1.5 py-0.5 rounded border border-blue-100">
+                            স্কোর: {sidebarQuizScore}/১০০
+                          </span>
+                        </div>
+
+                        <div className="bg-white p-3 rounded-lg border border-slate-200/80 shadow-xs space-y-3">
+                          {/* Question progress */}
+                          <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
+                            <span>প্রশ্ন: {sidebarQuizIndex + 1} / {SIDEBAR_QUIZ_QUESTIONS.length}</span>
+                            <span className="text-emerald-600 font-mono font-semibold">লাইভ টেস্ট</span>
+                          </div>
+
+                          {/* Question text */}
+                          <p className="text-[11.5px] font-extrabold text-slate-800 leading-relaxed">
+                            {activeQ.question}
+                          </p>
+
+                          {/* Options list */}
+                          <div className="space-y-2">
+                            {activeQ.options.map((option, idx) => {
+                              let optionClass = "bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100";
+                              if (isSidebarAnswered) {
+                                if (idx === activeQ.correctIndex) {
+                                  optionClass = "bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold";
+                                } else if (idx === selectedSidebarAnswer) {
+                                  optionClass = "bg-red-50 border-red-300 text-red-800 font-semibold";
+                                } else {
+                                  optionClass = "bg-slate-50 border-slate-200/50 text-slate-400 opacity-60";
+                                }
+                              }
+                              return (
+                                <button
+                                  key={idx}
+                                  onClick={() => handleAnswerClick(idx)}
+                                  disabled={isSidebarAnswered}
+                                  className={`w-full text-left p-2 rounded-lg text-[11px] transition-all duration-150 outline-none ${optionClass}`}
+                                >
+                                  {idx === 0 && "ক) "}
+                                  {idx === 1 && "খ) "}
+                                  {idx === 2 && "গ) "}
+                                  {idx === 3 && "ঘ) "}
+                                  {option}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Explanation and action feedback */}
+                          {isSidebarAnswered && (
+                            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded text-[10px] leading-relaxed text-slate-650">
+                              <span className="font-bold text-slate-850 block mb-0.5">
+                                {selectedSidebarAnswer === activeQ.correctIndex ? "🎉 সঠিক উত্তর!" : "❌ ভুল উত্তর হয়েছে!"}
+                              </span>
+                              {activeQ.explanation}
+                            </div>
+                          )}
+
+                          {/* Action button */}
+                          {isSidebarAnswered && (
+                            <button
+                              onClick={handleNextQuestion}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-lg text-[11px] transition-all flex items-center justify-center gap-1 shadow-xs"
+                            >
+                              <span>
+                                {sidebarQuizIndex === SIDEBAR_QUIZ_QUESTIONS.length - 1 ? "কুইজ আবার শুরু করুন 🔄" : "পরবর্তী প্রশ্ন ➡️"}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                 </div>
 
                 {/* Footer status indicator */}
-                <div className="mt-4 pt-3 border-t border-slate-200 text-center">
+                <div className="mt-3 pt-2.5 border-t border-slate-200 text-center">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-full text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Gemini Live Support Connected

@@ -26,7 +26,7 @@ export default function MarkdownAndMath({ content }: MarkdownAndMathProps) {
             return (
               <div 
                 key={index} 
-                className="overflow-x-auto overflow-y-hidden py-1.5 px-3 my-1.5 bg-slate-50/80 border border-slate-150 rounded-lg text-slate-800 text-center text-sm scrollbar-none max-w-full"
+                className="overflow-x-auto overflow-y-hidden py-1 px-2.5 my-1 bg-slate-50/80 border border-slate-150 rounded-lg text-slate-800 text-center text-xs scrollbar-none max-w-full font-medium"
                 dangerouslySetInnerHTML={{ __html: html }}
               />
             );
@@ -251,7 +251,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
         return (
           <span 
             key={idx} 
-            className="inline-block mx-1 font-sans text-orange-600 font-extrabold tracking-wide"
+            className="inline-block mx-1 font-sans text-orange-600 font-extrabold tracking-wide text-[12px]"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         );

@@ -37,7 +37,7 @@ async function startServer() {
     res.json({ status: "ok", time: new Date().toISOString() });
   });
 
-  // Main chat completions endpoint using official OpenAI/Grok SDK client
+  // Main chat completions endpoint using official Google GenAI / Gemini SDK client
   app.post("/api/chat", async (req, res) => {
     try {
       const { messages, activeMode, attachment } = req.body;
@@ -166,7 +166,14 @@ The user is currently studying in "${activeMode || 'General Mode'}". You should 
 
       let response = null;
       let lastError = null;
-      const modelsToTry = ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-flash-latest"];
+      const modelsToTry = [
+        "gemini-3.5-flash",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-flash-latest",
+        "gemini-1.5-pro"
+      ];
 
       for (const modelName of modelsToTry) {
         try {
